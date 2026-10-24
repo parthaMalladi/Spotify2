@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-t%do^pt(=4thpd2l!!d_pnbd1-v4375@9=a5l#h@w3kujuph64
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     
     "rest_framework",
     "corsheaders",
+
+    "library",
 ]
 
 MIDDLEWARE = [
@@ -132,4 +134,20 @@ MAILERS = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
+
+
+# Uploaded audio and cover art live in song_files/ at the project root.
+MEDIA_ROOT = BASE_DIR.parent / "song_files"
+MEDIA_URL = "media/"
+
+# Largest audio file accepted by the upload endpoint.
+MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200 MB
+
+
+REST_FRAMEWORK = {
+    # No user accounts in this app, so no authentication (this also means no CSRF checks on API calls).
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+}
+

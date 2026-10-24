@@ -1,3 +1,10 @@
+# =========================
+# Audio library (never commit)
+# =========================
+
+# Ignore everything in song_files except the placeholder that keeps the folder in git
+/song_files/*
+!/song_files/.gitkeep
 
 # =========================
 # Python / Django (backend)
@@ -6,6 +13,7 @@
 # Virtual environments
 backend/.venv/
 backend/venv/
+.venv/
 venv/
 
 # Python cache files
@@ -19,9 +27,20 @@ dist/
 build/
 
 # Django local files
-backend/db.sqlite3
-backend/db.sqlite3-journal
+*.sqlite3
+*.sqlite3-journal
 backend/media/
+backend/staticfiles/
+
+# Test and tooling output
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
 
 # Environment variables / secrets
 .env
@@ -39,6 +58,13 @@ frontend/.env.*
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/*.local
+
+# =========================
+# Claude Code (personal settings only; CLAUDE.md IS committed)
+# =========================
+
+.claude/settings.local.json
 
 # =========================
 # Editors and operating system
