@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
@@ -124,3 +124,19 @@ def playlist_reorder(request, pk):
     with transaction.atomic():
         PlaylistSong.objects.bulk_update(entries.values(), ["position"])
     return _playlist_response(request, playlist)
+
+
+@api_view(["GET"])
+def search(request):
+    """GET ?q=...: songs matching title/artist/album and playlists matching name (case-insensitive)."""
+    q = request.query_params.get("q", "").strip()
+    if not q:
+        return Response({"songs": [], "playlists": []})
+
+    songs = Song.objects.filter(Q(title__icontains=q) | Q(artist__icontains=q) | Q(album__icontains=q))
+    playlists = Playlist.objects.filter(name__icontains=q)
+    context = {"request": request}
+    return Response({
+        "songs": SongSerializer(songs, many=True, context=context).data,
+        "playlists": PlaylistSerializer(playlists, many=True, context=context).data,
+    })

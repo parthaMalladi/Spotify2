@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { addSongToPlaylist, deleteSong } from "../api";
+import { deleteSong } from "../api";
+import AddToPlaylistSelect from "../components/AddToPlaylistSelect";
 import AddToQueueButton from "../components/AddToQueueButton";
 import SongList from "../components/SongList";
 import UploadForm from "../components/UploadForm";
@@ -22,15 +23,9 @@ export default function LibraryPage({ songs, setSongs, loadError, playlists, onP
     }
   }
 
-  async function handleAddToPlaylist(song, playlistId) {
-    const playlist = playlists.find((p) => p.id === playlistId);
-    try {
-      await addSongToPlaylist(playlistId, song.id);
-      setMessage({ error: false, text: `Added "${song.title}" to "${playlist.name}".` });
-      onPlaylistsChanged();
-    } catch (err) {
-      setMessage({ error: true, text: err.message });
-    }
+  function handleAddedToPlaylist(result) {
+    setMessage(result);
+    if (!result.error) onPlaylistsChanged();
   }
 
   return (
@@ -46,23 +41,7 @@ export default function LibraryPage({ songs, setSongs, loadError, playlists, onP
         actions={(song) => (
           <>
             <AddToQueueButton song={song} />
-            {playlists.length > 0 && (
-              // Resets to the placeholder after each pick, so it works like a menu.
-              <select
-                className="add-to-playlist"
-                value=""
-                onChange={(e) => handleAddToPlaylist(song, Number(e.target.value))}
-              >
-                <option value="" disabled>
-                  Add to playlist…
-                </option>
-                {playlists.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <AddToPlaylistSelect song={song} playlists={playlists} onResult={handleAddedToPlaylist} />
             <button className="link danger" onClick={() => handleDelete(song)}>
               Delete
             </button>

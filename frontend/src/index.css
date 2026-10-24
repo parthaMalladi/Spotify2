@@ -1,11 +1,22 @@
+/* ===== Palette =====
+   Black background with one main colour, purple #42068f. Purple is only 1.6:1 on black, so it's never used
+   for text on black: it fills highlighted surfaces (player bar, selected items, now-playing rows, primary
+   buttons) with near-white text on top (11.5:1). Lighter lavender tints of it are used for accent text on black. */
 :root {
-  --bg: #121212;
-  --panel: #1e1e1e;
-  --border: #2c2c2c;
-  --text: #e6e6e6;
-  --muted: #8a8a8a;
-  --accent: #1db954;
-  --danger: #ff5c5c;
+  --bg: #09090b;
+  --surface: #17141f; /* inputs, menus */
+  --surface-strong: #2a2338; /* borders, cover placeholders */
+  --hover: rgba(66, 6, 143, 0.25); /* faint purple wash */
+  --border: #2a2338;
+  --text: #f5f3fa; /* near-white with a hint of lavender */
+  --muted: #a8a1b8; /* lavender grey, 8:1 on black */
+  --primary: #42068f;
+  --primary-hover: #5212ad;
+  --primary-border: #6b3fc0; /* outlines purple shapes so they stand out against black */
+  --accent: #b794ff; /* lavender text accents on black: success, focus, links */
+  --on-primary-muted: #cdbdf0; /* secondary text on purple, 7.3:1 */
+  --danger: #ff6b81; /* 7.3:1 on black */
+  --danger-on-primary: #ffb8c4; /* 7.8:1 on the purple player bar */
 
   font: 15px/1.4 system-ui, "Segoe UI", Roboto, sans-serif;
   color: var(--text);
@@ -31,6 +42,96 @@ h1 {
   font-size: 20px;
 }
 
+h3 {
+  margin: 28px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.muted,
+.empty {
+  color: var(--muted);
+}
+
+.success {
+  color: var(--accent);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+/* ===== Buttons and form controls ===== */
+
+.button {
+  display: inline-block;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  border: 1px solid var(--primary-border);
+  background: var(--primary);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled):not(.disabled) {
+  background: var(--primary-hover);
+}
+
+.button:disabled,
+.button.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.link:hover {
+  color: var(--text);
+}
+
+button.link.danger:hover {
+  color: var(--danger);
+}
+
+button.link:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.add-to-playlist {
+  max-width: 150px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+}
+
+/* ===== Layout: sidebar | page | queue panel, player bar fixed along the bottom ===== */
+
 .app {
   display: flex;
   align-items: flex-start;
@@ -45,7 +146,7 @@ h1 {
 .sidebar {
   position: sticky;
   top: 0;
-  width: 220px;
+  width: 260px;
   flex-shrink: 0;
   height: 100vh;
   overflow-y: auto;
@@ -55,6 +156,26 @@ h1 {
 
 .sidebar h1 {
   padding: 0 8px;
+}
+
+.search-box {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.search-box::placeholder {
+  color: var(--muted);
+}
+
+.search-box:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .sidebar-heading {
@@ -85,11 +206,11 @@ h1 {
 }
 
 .nav-item:hover {
-  background: var(--panel);
+  background: var(--hover);
 }
 
 .nav-item.active {
-  background: var(--border);
+  background: var(--primary);
   font-weight: 600;
 }
 
@@ -99,54 +220,7 @@ h1 {
   text-overflow: ellipsis;
 }
 
-.small {
-  font-size: 13px;
-}
-
-.success {
-  color: var(--accent);
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.error {
-  color: var(--danger);
-}
-
-.button {
-  display: inline-block;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #000;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.button.disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-button.link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-}
-
-button.link:hover {
-  color: var(--text);
-}
-
-button.link.danger:hover {
-  color: var(--danger);
-}
+/* ===== Library / playlist / search pages ===== */
 
 .upload {
   margin-bottom: 20px;
@@ -173,9 +247,49 @@ button.link.danger:hover {
   color: var(--danger);
 }
 
-.empty {
-  color: var(--muted);
+.playlist-header {
+  margin-bottom: 20px;
 }
+
+.playlist-header h2 {
+  margin-bottom: 4px;
+}
+
+.playlist-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.playlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin-bottom: 20px;
+}
+
+.playlist-form input,
+.playlist-form textarea {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.playlist-form input {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.search-playlists {
+  max-width: 400px;
+}
+
+/* ===== Song table ===== */
 
 .song-list {
   width: 100%;
@@ -183,12 +297,12 @@ button.link.danger:hover {
 }
 
 .song-list th {
-  text-align: left;
-  font-weight: 500;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
   color: var(--muted);
   font-size: 13px;
-  border-bottom: 1px solid var(--border);
-  padding: 8px;
+  font-weight: 500;
+  text-align: left;
 }
 
 .song-list td {
@@ -196,33 +310,57 @@ button.link.danger:hover {
   border-bottom: 1px solid var(--border);
 }
 
-.song-list tr:hover td {
-  background: var(--panel);
+/* Cover, length and action columns shrink to their content, so the spare width
+   goes to title/artist/album and the actions sit right next to the length. */
+.song-list .shrink {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .song-list .num {
   text-align: right;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.song-list .actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 8px;
+}
+
+.song-list tr:hover td {
+  background: var(--hover);
+}
+
+.song-list tr.current td {
+  background: var(--primary);
+  font-weight: 600;
+}
+
+.song-list tr.current:hover td {
+  background: var(--primary-hover);
+}
+
+.song-list tr.current .muted {
+  color: var(--on-primary-muted);
 }
 
 .cover {
   display: block;
+  flex-shrink: 0; /* in flex rows (queue panel, player bar) long titles would otherwise squeeze it */
   width: 40px;
   height: 40px;
   border-radius: 4px;
-  object-fit: cover;
+  object-fit: cover; /* non-square cover art is cropped to a square, not stretched */
 }
 
 .cover.placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--panel);
+  background: var(--surface-strong);
   color: var(--muted);
-}
-
-.song-list tr.current td {
-  color: var(--accent);
 }
 
 .cover-button {
@@ -241,8 +379,8 @@ button.link.danger:hover {
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: rgba(9, 9, 11, 0.6);
+  color: var(--text);
   opacity: 0;
 }
 
@@ -251,245 +389,8 @@ button.link.danger:hover {
   opacity: 1;
 }
 
-.player-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 24px;
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-}
+/* ===== Queue panel (always visible on the right) ===== */
 
-.now-playing {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.now-playing .cover {
-  width: 52px;
-  height: 52px;
-}
-
-.now-playing-text {
-  min-width: 0;
-}
-
-.now-playing-text > div {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.now-playing .title {
-  font-weight: 600;
-}
-
-.controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.buttons {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-button.icon {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: var(--text);
-  font-size: 18px;
-  cursor: pointer;
-}
-
-button.icon.play {
-  background: var(--text);
-  color: #000;
-}
-
-button.icon:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.progress input {
-  flex: 1;
-  accent-color: var(--accent);
-}
-
-.time {
-  width: 40px;
-  font-size: 12px;
-  color: var(--muted);
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.player-error {
-  font-size: 12px;
-  color: var(--danger);
-}
-
-.volume {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.volume input {
-  width: 120px;
-  accent-color: var(--accent);
-}
-
-button.link:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.song-list .actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-}
-
-.add-to-playlist {
-  max-width: 150px;
-  padding: 2px 4px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
-  color: var(--muted);
-  font: inherit;
-  font-size: 13px;
-}
-
-.playlist-header {
-  margin-bottom: 20px;
-}
-
-.playlist-header h2 {
-  margin-bottom: 4px;
-}
-
-.playlist-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-}
-
-.button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.playlist-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 480px;
-  margin-bottom: 20px;
-}
-
-.playlist-form input,
-.playlist-form textarea {
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel);
-  color: var(--text);
-  font: inherit;
-}
-
-.playlist-form input {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-
-/* Shuffle and loop: grey when off, green with a dot underneath when on. */
-button.icon.toggle {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-}
-
-button.icon.toggle:hover {
-  color: var(--text);
-}
-
-button.icon.toggle.active {
-  color: var(--accent);
-}
-
-/* Loop-one: a solid badge with a "1" on the loop icon's corner. */
-.loop-one-badge {
-  position: absolute;
-  top: 0;
-  right: -2px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  border: 2px solid var(--panel);
-  border-radius: 8px;
-  background: var(--accent);
-  color: #000;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 12px;
-  text-align: center;
-}
-
-button.icon.toggle.active::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-h3 {
-  margin: 28px 0 8px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.section-heading {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-}
-
-/* Always-visible queue on the right, mirroring the sidebar. */
 .queue-panel {
   position: sticky;
   top: 0;
@@ -533,7 +434,11 @@ h3 {
 }
 
 .queue-item:hover {
-  background: var(--panel);
+  background: var(--hover);
+}
+
+.queue-item.current {
+  background: var(--primary);
 }
 
 .queue-item-main {
@@ -568,12 +473,215 @@ h3 {
 }
 
 .queue-item.current .title {
-  color: var(--accent);
   font-weight: 600;
+}
+
+.queue-item.current .muted {
+  color: var(--on-primary-muted);
 }
 
 .queue-item-actions {
   display: flex;
   gap: 8px;
   padding-right: 8px;
+}
+
+/* ===== Player bar ===== */
+
+.player-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--primary);
+  border-top: 1px solid var(--primary-border);
+}
+
+.now-playing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.now-playing .cover {
+  width: 52px;
+  height: 52px;
+}
+
+.now-playing-text {
+  min-width: 0;
+}
+
+.now-playing-text > div {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.now-playing .title {
+  font-weight: 600;
+}
+
+.player-bar .muted {
+  color: var(--on-primary-muted);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+button.icon {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+button.icon.play {
+  background: var(--text);
+  color: var(--primary);
+}
+
+button.icon:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Shuffle and loop: dimmed when off, full white with a dot underneath when on. */
+button.icon.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  opacity: 0.55;
+}
+
+button.icon.toggle:hover {
+  opacity: 0.8;
+}
+
+button.icon.toggle.active {
+  color: var(--text);
+  opacity: 1;
+}
+
+button.icon.toggle.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+/* Loop-one: a solid badge with a "1" on the loop icon's corner. */
+.loop-one-badge {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 12px;
+  text-align: center;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.progress input {
+  flex: 1;
+  accent-color: var(--text);
+}
+
+.time {
+  width: 40px;
+  color: var(--on-primary-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.player-error {
+  color: var(--danger-on-primary);
+  font-size: 12px;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.volume input {
+  width: 120px;
+  accent-color: var(--text);
+}
+
+/* ===== Right-click menu ===== */
+
+.context-menu {
+  position: fixed;
+  z-index: 100; /* above everything, including the fixed player bar */
+  padding: 4px;
+  border: 1px solid var(--surface-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-menu button:hover:not(:disabled) {
+  background: var(--primary);
+}
+
+.context-menu button:disabled {
+  color: var(--muted);
+  cursor: default;
 }

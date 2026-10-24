@@ -75,3 +75,7 @@ export function removeSongFromPlaylist(playlistId, songId) {
 export function reorderPlaylist(playlistId, songIds) {
   return sendJson(`/playlists/${playlistId}/order/`, "PUT", { song_ids: songIds });
 }
+
+export function search(query) {
+  return request(`/search/?q=${encodeURIComponent(query)}`);
+}

@@ -16,18 +16,18 @@ export default function SongList({ songs, contextName, actions, emptyMessage }) 
     <table className="song-list">
       <thead>
         <tr>
-          <th></th>
+          <th className="shrink"></th>
           <th>Title</th>
           <th>Artist</th>
           <th>Album</th>
-          <th className="num">Length</th>
-          <th></th>
+          <th className="num shrink">Length</th>
+          <th className="shrink"></th>
         </tr>
       </thead>
       <tbody>
         {songs.map((song, i) => (
           <tr key={song.id} className={currentSong?.id === song.id ? "current" : ""} onDoubleClick={() => play(i)}>
-            <td>
+            <td className="shrink">
               <button className="cover-button" onClick={() => play(i)} title="Play">
                 {song.cover_url ? (
                   <img className="cover" src={song.cover_url} alt="" />
@@ -40,8 +40,8 @@ export default function SongList({ songs, contextName, actions, emptyMessage }) 
             <td>{song.title}</td>
             <td>{song.artist || <span className="muted">Unknown artist</span>}</td>
             <td>{song.album || <span className="muted">—</span>}</td>
-            <td className="num">{formatDuration(song.duration)}</td>
-            <td className="num">
+            <td className="num shrink">{formatDuration(song.duration)}</td>
+            <td className="shrink">
               <div className="actions">{actions(song, i)}</div>
             </td>
           </tr>

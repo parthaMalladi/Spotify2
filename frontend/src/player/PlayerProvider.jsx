@@ -143,7 +143,12 @@ export default function PlayerProvider({ children }) {
   }
 
   function addToQueue(song) {
-    setManualQueue((q) => [...q, makeEntry(song)]);
+    addSongsToQueue([song]);
+  }
+
+  // Appends several songs (e.g. a whole playlist) to the end of the manual queue, in order.
+  function addSongsToQueue(songs) {
+    setManualQueue((q) => [...q, ...songs.map(makeEntry)]);
   }
 
   function removeFromQueue(key) {
@@ -214,6 +219,7 @@ export default function PlayerProvider({ children }) {
     cycleLoopMode,
     toggleShuffle,
     addToQueue,
+    addSongsToQueue,
     removeFromQueue,
     moveInQueue,
     clearQueue,

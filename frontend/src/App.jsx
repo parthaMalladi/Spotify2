@@ -5,9 +5,10 @@ import QueuePanel from "./components/QueuePanel";
 import Sidebar from "./components/Sidebar";
 import LibraryPage from "./pages/LibraryPage";
 import PlaylistPage from "./pages/PlaylistPage";
+import SearchPage from "./pages/SearchPage";
 
 export default function App() {
-  // Simple in-memory navigation: { name: "library" } or { name: "playlist", id }.
+  // Simple in-memory navigation: { name: "library" }, { name: "playlist", id } or { name: "search", query }.
   const [page, setPage] = useState({ name: "library" });
   const [songs, setSongs] = useState(null); // null while loading
   const [playlists, setPlaylists] = useState([]);
@@ -53,6 +54,14 @@ export default function App() {
             setSongs={setSongs}
             loadError={loadError}
             playlists={playlists}
+            onPlaylistsChanged={refreshPlaylists}
+          />
+        )}
+        {page.name === "search" && (
+          <SearchPage
+            query={page.query}
+            playlists={playlists}
+            onOpenPlaylist={(id) => setPage({ name: "playlist", id })}
             onPlaylistsChanged={refreshPlaylists}
           />
         )}

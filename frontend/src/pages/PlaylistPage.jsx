@@ -6,9 +6,10 @@ import { usePlayer } from "../player/PlayerContext";
 
 // Rendered with key={id}, so it remounts (and refetches) when switching playlists.
 export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
-  const { playSongs } = usePlayer();
+  const { playSongs, addSongsToQueue } = usePlayer();
   const [playlist, setPlaylist] = useState(null);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -17,8 +18,15 @@ export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
       .catch((err) => setError(`Could not load playlist: ${err.message}`));
   }, [id]);
 
+  function handleAddAllToQueue() {
+    addSongsToQueue(playlist.songs);
+    const count = playlist.songs.length;
+    setNotice(`Added ${count} ${count === 1 ? "song" : "songs"} to the queue.`);
+  }
+
   async function run(action) {
     setError(null);
+    setNotice(null);
     try {
       const updated = await action();
       setPlaylist(updated);
@@ -73,6 +81,9 @@ export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
             <button className="button" onClick={() => playSongs(playlist.songs, 0, playlist.name)} disabled={playlist.songs.length === 0}>
               ▶ Play
             </button>
+            <button className="link" onClick={handleAddAllToQueue} disabled={playlist.songs.length === 0}>
+              Add to queue
+            </button>
             <button className="link" onClick={() => setEditing(true)}>
               Rename / edit
             </button>
@@ -83,6 +94,7 @@ export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
         </div>
       )}
       {error && <p className="error">{error}</p>}
+      {notice && <p className="success">{notice}</p>}
       <SongList
         songs={playlist.songs}
         contextName={playlist.name}
