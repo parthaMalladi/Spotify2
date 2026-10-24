@@ -1,0 +1,51 @@
+
+# =========================
+# Python / Django (backend)
+# =========================
+
+# Virtual environments
+backend/.venv/
+backend/venv/
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Django local files
+backend/db.sqlite3
+backend/db.sqlite3-journal
+backend/media/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# =========================
+# React / Vite (frontend)
+# =========================
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# =========================
+# Editors and operating system
+# =========================
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
