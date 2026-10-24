@@ -7,7 +7,13 @@ async function request(path, options = {}) {
     let message = `Request failed (${response.status})`;
     try {
       const data = await response.json();
-      if (data.detail) message = data.detail;
+      if (data.detail) {
+        message = data.detail;
+      } else {
+        // DRF field validation errors look like {"name": ["This field may not be blank."]}.
+        const [field, errors] = Object.entries(data)[0] ?? [];
+        if (Array.isArray(errors)) message = `${field}: ${errors[0]}`;
+      }
     } catch {
       // Response wasn't JSON; keep the generic message.
     }
@@ -28,4 +34,44 @@ export function uploadSong(file) {
 
 export function deleteSong(id) {
   return request(`/songs/${id}/`, { method: "DELETE" });
+}
+
+function sendJson(path, method, data) {
+  return request(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+export function listPlaylists() {
+  return request("/playlists/");
+}
+
+export function getPlaylist(id) {
+  return request(`/playlists/${id}/`);
+}
+
+export function createPlaylist(name, description = "") {
+  return sendJson("/playlists/", "POST", { name, description });
+}
+
+export function updatePlaylist(id, changes) {
+  return sendJson(`/playlists/${id}/`, "PATCH", changes);
+}
+
+export function deletePlaylist(id) {
+  return request(`/playlists/${id}/`, { method: "DELETE" });
+}
+
+export function addSongToPlaylist(playlistId, songId) {
+  return sendJson(`/playlists/${playlistId}/songs/`, "POST", { song_id: songId });
+}
+
+export function removeSongFromPlaylist(playlistId, songId) {
+  return request(`/playlists/${playlistId}/songs/${songId}/`, { method: "DELETE" });
+}
+
+export function reorderPlaylist(playlistId, songIds) {
+  return sendJson(`/playlists/${playlistId}/order/`, "PUT", { song_ids: songIds });
 }

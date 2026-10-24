@@ -54,6 +54,14 @@ python manage.py migrate
 | GET | `/api/songs/<id>/` | One song |
 | DELETE | `/api/songs/<id>/` | Delete a song and its audio/cover files |
 | GET | `/api/songs/<id>/stream/` | Stream the audio (supports HTTP Range, so seeking works) |
+| GET | `/api/playlists/` | List playlists (with `song_count`) |
+| POST | `/api/playlists/` | Create a playlist (`{name, description?}`) |
+| GET | `/api/playlists/<id>/` | One playlist, with its `songs` in order |
+| PATCH | `/api/playlists/<id>/` | Rename / edit description |
+| DELETE | `/api/playlists/<id>/` | Delete a playlist (its songs stay in the library) |
+| POST | `/api/playlists/<id>/songs/` | Add a song to the end (`{song_id}`) |
+| DELETE | `/api/playlists/<id>/songs/<song_id>/` | Remove a song from the playlist |
+| PUT | `/api/playlists/<id>/order/` | Reorder (`{song_ids: [...]}`, must list exactly the playlist's songs) |
 
 Each song in the API includes a `stream_url` (what the player plays) and a `format` (`mp3`, `m4a`, `aac` or `opus`).
 

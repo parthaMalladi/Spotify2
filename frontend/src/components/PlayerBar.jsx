@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { formatDuration } from "../format";
 import { usePlayer } from "../player/PlayerContext";
+import { LoopIcon, ShuffleIcon } from "./icons";
+
+const LOOP_TITLES = {
+  off: "Loop: off (click to loop the list)",
+  all: "Loop: whole list (click to loop this song)",
+  one: "Loop: this song (click to turn off)",
+};
 
 export default function PlayerBar() {
   const player = usePlayer();
@@ -33,14 +40,36 @@ export default function PlayerBar() {
 
       <div className="controls">
         <div className="buttons">
+          <button
+            className={`icon toggle ${player.isShuffled ? "active" : ""}`}
+            onClick={player.toggleShuffle}
+            title={player.isShuffled ? "Shuffle: on (click to restore original order)" : "Shuffle: off"}
+            aria-pressed={player.isShuffled}
+          >
+            <ShuffleIcon />
+          </button>
           <button className="icon" onClick={player.previous} disabled={!currentSong} title="Previous">
             ⏮
           </button>
-          <button className="icon play" onClick={player.togglePlay} disabled={!currentSong} title={isPlaying ? "Pause" : "Play"}>
+          <button
+            className="icon play"
+            onClick={player.togglePlay}
+            disabled={!currentSong && !player.hasNext}
+            title={isPlaying ? "Pause" : "Play"}
+          >
             {isPlaying ? "⏸" : "▶"}
           </button>
           <button className="icon" onClick={player.next} disabled={!player.hasNext} title="Next">
             ⏭
+          </button>
+          <button
+            className={`icon toggle ${player.loopMode !== "off" ? "active" : ""}`}
+            onClick={player.cycleLoopMode}
+            title={LOOP_TITLES[player.loopMode]}
+            aria-label={LOOP_TITLES[player.loopMode]}
+          >
+            <LoopIcon />
+            {player.loopMode === "one" && <span className="loop-one-badge">1</span>}
           </button>
         </div>
         <div className="progress">

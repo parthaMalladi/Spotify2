@@ -3,7 +3,7 @@ from pathlib import Path
 from django.urls import reverse
 from rest_framework import serializers
 
-from .models import Song
+from .models import Playlist, Song
 
 
 class SongSerializer(serializers.ModelSerializer):
@@ -26,3 +26,26 @@ class SongSerializer(serializers.ModelSerializer):
     def get_format(self, song):
         # "mp3", "m4a", "aac" or "opus", so the frontend can say which format a browser can't play.
         return Path(song.audio.name).suffix.lstrip(".").lower()
+
+
+class PlaylistSerializer(serializers.ModelSerializer):
+    song_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Playlist
+        fields = ["id", "name", "description", "created_at", "song_count"]
+
+    def get_song_count(self, playlist):
+        return playlist.entries.count()
+
+
+class PlaylistDetailSerializer(PlaylistSerializer):
+    songs = serializers.SerializerMethodField()
+
+    class Meta(PlaylistSerializer.Meta):
+        fields = PlaylistSerializer.Meta.fields + ["songs"]
+
+    def get_songs(self, playlist):
+        # In playlist order (PlaylistSong.Meta.ordering).
+        songs = [entry.song for entry in playlist.entries.select_related("song")]
+        return SongSerializer(songs, many=True, context=self.context).data

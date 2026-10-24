@@ -1,11 +1,15 @@
 import { formatDuration } from "../format";
 import { usePlayer } from "../player/PlayerContext";
 
-export default function SongList({ songs, onDelete }) {
+// A table of songs. Clicking a cover (or double-clicking a row) plays the whole list from that song;
+// `contextName` ("Library" or the playlist name) labels that list in the queue panel.
+// `actions(song, index)` renders the buttons in the last column, which differ per page.
+export default function SongList({ songs, contextName, actions, emptyMessage }) {
   const { currentSong, playSongs } = usePlayer();
+  const play = (i) => playSongs(songs, i, contextName);
 
   if (songs.length === 0) {
-    return <p className="empty">No songs yet. Upload some to get started.</p>;
+    return <p className="empty">{emptyMessage}</p>;
   }
 
   return (
@@ -22,13 +26,9 @@ export default function SongList({ songs, onDelete }) {
       </thead>
       <tbody>
         {songs.map((song, i) => (
-          <tr
-            key={song.id}
-            className={currentSong?.id === song.id ? "current" : ""}
-            onDoubleClick={() => playSongs(songs, i)}
-          >
+          <tr key={song.id} className={currentSong?.id === song.id ? "current" : ""} onDoubleClick={() => play(i)}>
             <td>
-              <button className="cover-button" onClick={() => playSongs(songs, i)} title="Play">
+              <button className="cover-button" onClick={() => play(i)} title="Play">
                 {song.cover_url ? (
                   <img className="cover" src={song.cover_url} alt="" />
                 ) : (
@@ -42,9 +42,7 @@ export default function SongList({ songs, onDelete }) {
             <td>{song.album || <span className="muted">—</span>}</td>
             <td className="num">{formatDuration(song.duration)}</td>
             <td className="num">
-              <button className="link danger" onClick={() => onDelete(song)}>
-                Delete
-              </button>
+              <div className="actions">{actions(song, i)}</div>
             </td>
           </tr>
         ))}

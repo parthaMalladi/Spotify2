@@ -1,46 +1,74 @@
 import { useEffect, useState } from "react";
-import { deleteSong, listSongs } from "./api";
+import { createPlaylist, listPlaylists, listSongs } from "./api";
 import PlayerBar from "./components/PlayerBar";
-import SongList from "./components/SongList";
-import UploadForm from "./components/UploadForm";
+import QueuePanel from "./components/QueuePanel";
+import Sidebar from "./components/Sidebar";
+import LibraryPage from "./pages/LibraryPage";
+import PlaylistPage from "./pages/PlaylistPage";
 
 export default function App() {
-  const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Simple in-memory navigation: { name: "library" } or { name: "playlist", id }.
+  const [page, setPage] = useState({ name: "library" });
+  const [songs, setSongs] = useState(null); // null while loading
+  const [playlists, setPlaylists] = useState([]);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
-    listSongs()
-      .then(setSongs)
-      .catch((err) => setError(`Could not load songs: ${err.message}. Is the Django server running?`))
-      .finally(() => setLoading(false));
+    Promise.all([listSongs(), listPlaylists()])
+      .then(([songList, playlistList]) => {
+        setSongs(songList);
+        setPlaylists(playlistList);
+      })
+      .catch((err) => {
+        setSongs([]);
+        setLoadError(`Could not load your library: ${err.message}. Is the Django server running?`);
+      });
   }, []);
 
-  function handleUploaded(song) {
-    setSongs((current) => [song, ...current]);
+  function refreshPlaylists() {
+    listPlaylists()
+      .then(setPlaylists)
+      .catch(() => {}); // the sidebar just keeps its old counts
   }
 
-  async function handleDelete(song) {
-    if (!window.confirm(`Delete "${song.title}"? This removes the file from your library.`)) return;
+  async function handleCreatePlaylist() {
+    const name = window.prompt("Name for the new playlist:");
+    if (!name?.trim()) return;
     try {
-      await deleteSong(song.id);
-      setSongs((current) => current.filter((s) => s.id !== song.id));
+      const playlist = await createPlaylist(name.trim());
+      refreshPlaylists();
+      setPage({ name: "playlist", id: playlist.id });
     } catch (err) {
-      setError(`Could not delete: ${err.message}`);
+      window.alert(`Could not create playlist: ${err.message}`);
     }
   }
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Music Player</h1>
-      </header>
+      <Sidebar playlists={playlists} page={page} onNavigate={setPage} onCreatePlaylist={handleCreatePlaylist} />
       <main className="content">
-        <h2>Library</h2>
-        <UploadForm onUploaded={handleUploaded} />
-        {error && <p className="error">{error}</p>}
-        {loading ? <p className="muted">Loading…</p> : <SongList songs={songs} onDelete={handleDelete} />}
+        {page.name === "library" && (
+          <LibraryPage
+            songs={songs}
+            setSongs={setSongs}
+            loadError={loadError}
+            playlists={playlists}
+            onPlaylistsChanged={refreshPlaylists}
+          />
+        )}
+        {page.name === "playlist" && (
+          <PlaylistPage
+            key={page.id}
+            id={page.id}
+            onPlaylistsChanged={refreshPlaylists}
+            onDeleted={() => {
+              refreshPlaylists();
+              setPage({ name: "library" });
+            }}
+          />
+        )}
       </main>
+      <QueuePanel />
       <PlayerBar />
     </div>
   );
