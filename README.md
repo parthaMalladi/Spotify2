@@ -7,6 +7,7 @@ Everything runs on your own machine. It isn't deployed anywhere, has no accounts
 ## Features
 
 - **Upload** mp3, m4a/aac and opus files (up to 200 MB each, several at once). Title, artist, album, length and cover art are read from the file's tags; the filename is used as the title when there are no tags (common for raw `.aac`). Files that can't be read as audio are rejected.
+- **Download from YouTube:** paste a YouTube link on the Library page and press **Download**. The audio is saved in YouTube's own AAC format (`.m4a`, no conversion). Videos over 30 minutes, live streams and playlist-only links are rejected. A spinner shows while it downloads, also next to "Library" in the sidebar if you switch pages, and a message tells you when the song is in your Library. YouTube audio has no tags, so the title is the video title, the artist is the channel name and the cover is the video thumbnail. YouTube Music links usually give proper track/artist/album details.
 - **Library:** every song, newest first. Deleting a song removes its audio and cover files too, and takes it out of any playlists.
 - **Playlists:** create, rename/describe, delete (the songs stay in the library), add songs, remove songs, reorder with ↑/↓.
 - **Search** songs by title, artist or album, and playlists by name, from the box at the top of the sidebar.
@@ -40,6 +41,13 @@ Frontend (from `frontend/`):
 ```powershell
 npm install
 ```
+
+### YouTube downloads
+
+YouTube downloads use [yt-dlp](https://github.com/yt-dlp/yt-dlp) (installed by `requirements.txt`). It also needs a JavaScript runtime to unlock YouTube's streams. Node.js (already needed for the frontend) works, and so does Deno. Two more notes:
+
+- **When downloads start failing**, YouTube has usually changed something. Update yt-dlp from `backend/` with the venv active: `pip install -U "yt-dlp[default]"`, then `pip freeze > requirements.txt`.
+- **ffmpeg is optional.** Without it yt-dlp warns that it's "writing DASH m4a"; the files still parse fine and should play in Chrome, Edge and Firefox. With ffmpeg installed (`winget install ffmpeg`), yt-dlp repackages the file into a standard m4a without re-encoding.
 
 ## Running
 
@@ -76,6 +84,7 @@ backend/
     models.py          Song, Playlist, PlaylistSong
     metadata.py        Reads tags and cover art with Mutagen
     streaming.py       Audio streaming with HTTP Range support (for seeking)
+    youtube.py         Downloads a YouTube video's audio with yt-dlp
     views.py, urls.py  The REST API
 frontend/src/
   api.js               All calls to the backend
@@ -92,6 +101,7 @@ song_files/            Uploaded audio (audio/) and cover art (covers/). Git-igno
 | --- | --- | --- |
 | GET | `/api/songs/` | List all songs |
 | POST | `/api/songs/` | Upload a song (multipart, field `file`; mp3/m4a/aac/opus, max 200 MB) |
+| POST | `/api/songs/youtube/` | Download a YouTube video's audio into the library (`{url}`; max 30 minutes; waits until the download finishes) |
 | GET | `/api/songs/<id>/` | One song |
 | DELETE | `/api/songs/<id>/` | Delete a song and its audio/cover files |
 | GET | `/api/songs/<id>/stream/` | Stream the audio (supports HTTP Range, so seeking works) |

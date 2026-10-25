@@ -1,7 +1,17 @@
 asgiref==3.13.0
+brotli==1.2.1
+certifi==2026.10.23
+charset-normalizer==3.5.2
 Django==6.1.2
 django-cors-headers==4.9.0
 djangorestframework==3.18.3
+idna==3.20
 mutagen==1.48.1
+pycryptodomex==3.24.1
+requests==2.34.2
 sqlparse==0.6.0
 tzdata==2026.5
+urllib3==2.8.0
+websockets==17.3
+yt-dlp==2026.10.21
+yt-dlp-ejs==0.8.0

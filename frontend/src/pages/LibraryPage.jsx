@@ -4,8 +4,17 @@ import AddToPlaylistSelect from "../components/AddToPlaylistSelect";
 import AddToQueueButton from "../components/AddToQueueButton";
 import SongList from "../components/SongList";
 import UploadForm from "../components/UploadForm";
+import YouTubeImportForm from "../components/YouTubeImportForm";
 
-export default function LibraryPage({ songs, setSongs, loadError, playlists, onPlaylistsChanged }) {
+export default function LibraryPage({
+  songs,
+  setSongs,
+  loadError,
+  playlists,
+  onPlaylistsChanged,
+  youtubeImport,
+  onYouTubeImport,
+}) {
   const [message, setMessage] = useState(null);
 
   function handleUploaded(song) {
@@ -32,6 +41,7 @@ export default function LibraryPage({ songs, setSongs, loadError, playlists, onP
     <>
       <h2>Library</h2>
       <UploadForm onUploaded={handleUploaded} />
+      <YouTubeImportForm status={youtubeImport} onImport={onYouTubeImport} />
       {loadError && <p className="error">{loadError}</p>}
       {message && <p className={message.error ? "error" : "success"}>{message.text}</p>}
       <SongList

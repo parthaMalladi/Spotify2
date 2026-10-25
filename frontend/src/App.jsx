@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createPlaylist, listPlaylists, listSongs } from "./api";
+import { createPlaylist, importFromYouTube, listPlaylists, listSongs } from "./api";
 import PlayerBar from "./components/PlayerBar";
 import QueuePanel from "./components/QueuePanel";
 import Sidebar from "./components/Sidebar";
@@ -13,6 +13,10 @@ export default function App() {
   const [songs, setSongs] = useState(null); // null while loading
   const [playlists, setPlaylists] = useState([]);
   const [loadError, setLoadError] = useState(null);
+  // YouTube download: null, or { state: "downloading" | "done" | "error", text }.
+  const [youtubeImport, setYoutubeImport] = useState(null);
+  // A finished download the user hasn't looked at yet; the sidebar flags it until they visit the Library.
+  const [youtubeUnseen, setYoutubeUnseen] = useState(false);
 
   useEffect(() => {
     Promise.all([listSongs(), listPlaylists()])
@@ -26,6 +30,29 @@ export default function App() {
       });
   }, []);
 
+  function navigate(next) {
+    // Arriving at or leaving the Library means the download result has been seen there.
+    if (next.name === "library" || page.name === "library") setYoutubeUnseen(false);
+    setPage(next);
+  }
+
+  // Returns true on success so the form can clear its input.
+  async function handleYouTubeImport(url) {
+    setYoutubeImport({ state: "downloading" });
+    setYoutubeUnseen(false);
+    try {
+      const song = await importFromYouTube(url);
+      setSongs((current) => [song, ...(current ?? [])]);
+      setYoutubeImport({ state: "done", text: `Finished downloading "${song.title}". It's now at the top of your Library.` });
+      return true;
+    } catch (err) {
+      setYoutubeImport({ state: "error", text: `Download failed: ${err.message}` });
+      return false;
+    } finally {
+      setYoutubeUnseen(true);
+    }
+  }
+
   function refreshPlaylists() {
     listPlaylists()
       .then(setPlaylists)
@@ -38,7 +65,7 @@ export default function App() {
     try {
       const playlist = await createPlaylist(name.trim());
       refreshPlaylists();
-      setPage({ name: "playlist", id: playlist.id });
+      navigate({ name: "playlist", id: playlist.id });
     } catch (err) {
       window.alert(`Could not create playlist: ${err.message}`);
     }
@@ -46,7 +73,14 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar playlists={playlists} page={page} onNavigate={setPage} onCreatePlaylist={handleCreatePlaylist} />
+      <Sidebar
+        playlists={playlists}
+        page={page}
+        onNavigate={navigate}
+        onCreatePlaylist={handleCreatePlaylist}
+        youtubeImport={youtubeImport}
+        youtubeUnseen={youtubeUnseen}
+      />
       <main className="content">
         {page.name === "library" && (
           <LibraryPage
@@ -55,13 +89,15 @@ export default function App() {
             loadError={loadError}
             playlists={playlists}
             onPlaylistsChanged={refreshPlaylists}
+            youtubeImport={youtubeImport}
+            onYouTubeImport={handleYouTubeImport}
           />
         )}
         {page.name === "search" && (
           <SearchPage
             query={page.query}
             playlists={playlists}
-            onOpenPlaylist={(id) => setPage({ name: "playlist", id })}
+            onOpenPlaylist={(id) => navigate({ name: "playlist", id })}
             onPlaylistsChanged={refreshPlaylists}
           />
         )}
@@ -72,7 +108,7 @@ export default function App() {
             onPlaylistsChanged={refreshPlaylists}
             onDeleted={() => {
               refreshPlaylists();
-              setPage({ name: "library" });
+              navigate({ name: "library" });
             }}
           />
         )}

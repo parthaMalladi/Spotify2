@@ -1,4 +1,7 @@
+import tempfile
+
 from django.conf import settings
+from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Max, Q
@@ -11,6 +14,23 @@ from rest_framework.response import Response
 from .metadata import UnsupportedFile, extract_metadata
 from .models import Playlist, PlaylistSong, Song
 from .serializers import PlaylistDetailSerializer, PlaylistSerializer, SongSerializer
+from .youtube import YouTubeError, download_audio
+
+
+def _save_song(meta, audio_file):
+    """Create a Song from extract_metadata()-style fields and a Django file object."""
+    song = Song(
+        title=meta["title"],
+        artist=meta["artist"],
+        album=meta["album"],
+        duration=meta["duration"],
+        audio=audio_file,
+    )
+    if meta["cover"]:
+        data, ext = meta["cover"]
+        song.cover.save(f"cover{ext}", ContentFile(data), save=False)
+    song.save()
+    return song
 
 
 class SongListCreate(generics.ListCreateAPIView):
@@ -37,20 +57,47 @@ class SongListCreate(generics.ListCreateAPIView):
         except UnsupportedFile as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        song = Song(
-            title=meta["title"],
-            artist=meta["artist"],
-            album=meta["album"],
-            duration=meta["duration"],
-            audio=uploaded,
-        )
-        if meta["cover"]:
-            data, ext = meta["cover"]
-            song.cover.save(f"cover{ext}", ContentFile(data), save=False)
-        song.save()
-
+        song = _save_song(meta, uploaded)
         serializer = self.get_serializer(song)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+def youtube_import(request):
+    """POST {url}: download a YouTube video's audio (AAC, max 30 minutes) and add it to the library.
+
+    Runs synchronously, so the request takes as long as the download.
+    """
+    url = request.data.get("url")
+    if not isinstance(url, str) or not url.strip():
+        return Response({"detail": "Paste a YouTube link."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Download into a throwaway folder; only the saved copy ends up in song_files/.
+    with tempfile.TemporaryDirectory() as folder:
+        try:
+            path, info, cover = download_audio(url.strip(), folder)
+        except YouTubeError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        with open(path, "rb") as f:
+            # Same validation as a normal upload; this also reads the real duration.
+            try:
+                meta = extract_metadata(f, path.name)
+            except UnsupportedFile as e:
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # YouTube audio has no tags, so take the details from the video instead.
+            # YouTube Music links fill in track/artist/album; plain videos only have a title and channel.
+            artist = info.get("artist") or info.get("creator") or info.get("channel") or info.get("uploader") or ""
+            meta["title"] = (info.get("track") or info.get("title") or meta["title"])[:255]
+            meta["artist"] = meta["artist"] or artist.removesuffix(" - Topic")[:255]
+            meta["album"] = meta["album"] or (info.get("album") or "")[:255]
+            meta["cover"] = meta["cover"] or cover
+
+            song = _save_song(meta, File(f, name=path.name))
+
+    serializer = SongSerializer(song, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SongDetail(generics.RetrieveDestroyAPIView):

@@ -3,7 +3,7 @@ import { getPlaylist } from "../api";
 import { usePlayer } from "../player/PlayerContext";
 import ContextMenu from "./ContextMenu";
 
-export default function Sidebar({ playlists, page, onNavigate, onCreatePlaylist }) {
+export default function Sidebar({ playlists, page, onNavigate, onCreatePlaylist, youtubeImport, youtubeUnseen }) {
   const { addSongsToQueue } = usePlayer();
   const [menu, setMenu] = useState(null); // { x, y, playlist } while the right-click menu is open
   const closeMenu = useCallback(() => setMenu(null), []);
@@ -37,7 +37,8 @@ export default function Sidebar({ playlists, page, onNavigate, onCreatePlaylist 
         className={`nav-item ${page.name === "library" ? "active" : ""}`}
         onClick={() => onNavigate({ name: "library" })}
       >
-        Library
+        <span className="nav-name">Library</span>
+        <YouTubeBadge status={youtubeImport} unseen={youtubeUnseen && page.name !== "library"} />
       </button>
 
       <div className="sidebar-heading">
@@ -75,4 +76,18 @@ export default function Sidebar({ playlists, page, onNavigate, onCreatePlaylist 
       )}
     </nav>
   );
+}
+
+// Small note next to "Library" so a YouTube download's progress and result are visible from any page.
+function YouTubeBadge({ status, unseen }) {
+  if (status?.state === "downloading") {
+    return (
+      <span className="nav-badge" title="Downloading from YouTube">
+        <span className="spinner" aria-hidden="true" /> Downloading
+      </span>
+    );
+  }
+  if (!unseen) return null;
+  if (status?.state === "error") return <span className="nav-badge error">Download failed</span>;
+  return <span className="nav-badge success">New song</span>;
 }

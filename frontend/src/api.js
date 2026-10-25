@@ -32,6 +32,11 @@ export function uploadSong(file) {
   return request("/songs/", { method: "POST", body });
 }
 
+// Slow: the backend downloads the whole video's audio before responding.
+export function importFromYouTube(url) {
+  return sendJson("/songs/youtube/", "POST", { url });
+}
+
 export function deleteSong(id) {
   return request(`/songs/${id}/`, { method: "DELETE" });
 }
