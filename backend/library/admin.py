@@ -15,5 +15,6 @@ class PlaylistSongInline(admin.TabularInline):
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ["name", "created_at"]
+    list_display = ["name", "owner", "created_at"]
+    list_filter = ["owner"]
     inlines = [PlaylistSongInline]

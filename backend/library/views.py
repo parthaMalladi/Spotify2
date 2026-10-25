@@ -7,12 +7,14 @@ from django.db import transaction
 from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .metadata import UnsupportedFile, extract_metadata
 from .models import Playlist, PlaylistSong, Song
+from .permissions import IsAdmin, IsAdminOrReadOnly
 from .serializers import PlaylistDetailSerializer, PlaylistSerializer, SongSerializer
 from .youtube import YouTubeError, download_audio
 
@@ -34,11 +36,12 @@ def _save_song(meta, audio_file):
 
 
 class SongListCreate(generics.ListCreateAPIView):
-    """GET: list all songs. POST (multipart, field "file"): upload one song."""
+    """GET: list all songs. POST (multipart, field "file", admin only): upload one song."""
 
     queryset = Song.objects.all()
     serializer_class = SongSerializer
     parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
     def create(self, request, *args, **kwargs):
         uploaded = request.FILES.get("file")
@@ -63,8 +66,9 @@ class SongListCreate(generics.ListCreateAPIView):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdmin])
 def youtube_import(request):
-    """POST {url}: download a YouTube video's audio (AAC, max 30 minutes) and add it to the library.
+    """POST {url} (admin only): download a YouTube video's audio (AAC, max 30 minutes) and add it to the library.
 
     Runs synchronously, so the request takes as long as the download.
     """
@@ -101,24 +105,35 @@ def youtube_import(request):
 
 
 class SongDetail(generics.RetrieveDestroyAPIView):
-    """GET: one song. DELETE: remove the song and its files."""
+    """GET: one song. DELETE (admin only): remove the song and its files, and so from everyone's playlists."""
 
     queryset = Song.objects.all()
     serializer_class = SongSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
 
+
+# Playlists are private: every playlist view only sees the logged-in user's own playlists,
+# so someone else's playlist id gives a 404.
 
 class PlaylistListCreate(generics.ListCreateAPIView):
-    """GET: list playlists. POST {name, description?}: create one."""
+    """GET: list your playlists. POST {name, description?}: create one."""
 
-    queryset = Playlist.objects.all()
     serializer_class = PlaylistSerializer
+
+    def get_queryset(self):
+        return Playlist.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class PlaylistDetail(generics.RetrieveUpdateDestroyAPIView):
     """GET: playlist with its songs in order. PATCH: rename / edit description. DELETE: remove it (songs are kept)."""
 
-    queryset = Playlist.objects.all()
     serializer_class = PlaylistDetailSerializer
+
+    def get_queryset(self):
+        return Playlist.objects.filter(owner=self.request.user)
 
 
 def _playlist_response(request, playlist, status_code=status.HTTP_200_OK):
@@ -129,7 +144,7 @@ def _playlist_response(request, playlist, status_code=status.HTTP_200_OK):
 @api_view(["POST"])
 def playlist_add_song(request, pk):
     """POST {song_id}: append a song to the end of the playlist."""
-    playlist = get_object_or_404(Playlist, pk=pk)
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
     song_id = request.data.get("song_id")
     if not isinstance(song_id, int):
         return Response({"detail": "song_id must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
@@ -146,7 +161,7 @@ def playlist_add_song(request, pk):
 @api_view(["DELETE"])
 def playlist_remove_song(request, pk, song_id):
     """Remove a song from the playlist (the song itself stays in the library)."""
-    playlist = get_object_or_404(Playlist, pk=pk)
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
     entry = get_object_or_404(PlaylistSong, playlist=playlist, song_id=song_id)
     entry.delete()
     return _playlist_response(request, playlist)
@@ -155,7 +170,7 @@ def playlist_remove_song(request, pk, song_id):
 @api_view(["PUT"])
 def playlist_reorder(request, pk):
     """PUT {song_ids: [...]}: set the playlist order. Must list exactly the songs already in it."""
-    playlist = get_object_or_404(Playlist, pk=pk)
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
     song_ids = request.data.get("song_ids")
     entries = {entry.song_id: entry for entry in playlist.entries.all()}
 
@@ -175,13 +190,13 @@ def playlist_reorder(request, pk):
 
 @api_view(["GET"])
 def search(request):
-    """GET ?q=...: songs matching title/artist/album and playlists matching name (case-insensitive)."""
+    """GET ?q=...: songs matching title/artist/album and your playlists matching name (case-insensitive)."""
     q = request.query_params.get("q", "").strip()
     if not q:
         return Response({"songs": [], "playlists": []})
 
     songs = Song.objects.filter(Q(title__icontains=q) | Q(artist__icontains=q) | Q(album__icontains=q))
-    playlists = Playlist.objects.filter(name__icontains=q)
+    playlists = Playlist.objects.filter(owner=request.user, name__icontains=q)
     context = {"request": request}
     return Response({
         "songs": SongSerializer(songs, many=True, context=context).data,

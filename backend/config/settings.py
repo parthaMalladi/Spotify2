@@ -10,22 +10,24 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# SECRET_KEY and DEBUG come from backend/.env (git-ignored). See backend/.env.example.
+load_dotenv(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
+SECRET_KEY = os.environ["SECRET_KEY"]
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-t%do^pt(=4thpd2l!!d_pnbd1-v4375@9=a5l#h@w3kujuph64'
+# True only while developing (runserver + Vite dev server). Must be False when the app is online.
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("1", "true", "yes")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+# localhost for use at home, plus the random *.trycloudflare.com address of the quick tunnel.
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".trycloudflare.com"]
 
 
 # Application definition
@@ -46,6 +48,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves Django admin's static files and the built frontend (frontend/dist) when online.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -121,6 +125,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"  # filled by `manage.py collectstatic`
+
+# The built frontend (`npm run build`) is served from the site root, with index.html at "/".
+# WhiteNoise only scans this folder at startup when DEBUG is off, so build before starting the server.
+WHITENOISE_ROOT = BASE_DIR.parent / "frontend" / "dist"
+WHITENOISE_INDEX_FILE = True
 
 
 # Email
@@ -136,6 +146,19 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+# The Vite dev server sends the login session cookie along with API calls.
+CORS_ALLOW_CREDENTIALS = True
+
+# Origins allowed to make logged-in POST/PATCH/DELETE requests: the Vite dev server and the tunnel.
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://*.trycloudflare.com",
+]
+
+# Online, cookies are only sent over HTTPS. Browsers still accept them on http://localhost.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 
 # Uploaded audio and cover art live in song_files/ at the project root.
@@ -147,7 +170,10 @@ MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200 MB
 
 
 REST_FRAMEWORK = {
-    # No user accounts in this app, so no authentication (this also means no CSRF checks on API calls).
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    # Django's session login. DRF checks the CSRF token on every logged-in POST/PUT/PATCH/DELETE.
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # Slows down password guessing on the login endpoint (per visitor IP; serve.py passes the real IP through).
+    "DEFAULT_THROTTLE_RATES": {"login": "10/minute"},
 }
 

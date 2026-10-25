@@ -1,9 +1,12 @@
-"""Serve audio files with HTTP Range support so the browser can seek."""
+"""Serve audio files (with HTTP Range support so the browser can seek) and cover art, to logged-in users only.
+
+These are plain Django views rather than DRF ones because <audio> and <img> load them directly.
+"""
 
 import re
 from pathlib import Path
 
-from django.http import Http404, HttpResponse, StreamingHttpResponse
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_safe
 
@@ -58,6 +61,8 @@ def _file_iterator(path, start, length):
 
 @require_safe
 def stream_song(request, pk):
+    if not request.user.is_authenticated:
+        return HttpResponse("Log in to play songs.", status=403)
     song = get_object_or_404(Song, pk=pk)
     path = Path(song.audio.path)
     if not path.is_file():
@@ -83,4 +88,17 @@ def stream_song(request, pk):
 
     response["Content-Length"] = str(length)
     response["Accept-Ranges"] = "bytes"
+    return response
+
+
+@require_safe
+def song_cover(request, pk):
+    if not request.user.is_authenticated:
+        return HttpResponse("Log in to see cover art.", status=403)
+    song = get_object_or_404(Song, pk=pk)
+    if not song.cover:
+        raise Http404("This song has no cover art")
+    response = FileResponse(song.cover.open("rb"))
+    # Covers never change for a song, so the browser may keep them for a day (but shared caches may not).
+    response["Cache-Control"] = "private, max-age=86400"
     return response

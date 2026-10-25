@@ -1,13 +1,41 @@
 import { useEffect, useState } from "react";
-import { createPlaylist, importFromYouTube, listPlaylists, listSongs } from "./api";
+import { createPlaylist, getCurrentUser, importFromYouTube, listPlaylists, listSongs, logOut } from "./api";
 import PlayerBar from "./components/PlayerBar";
 import QueuePanel from "./components/QueuePanel";
 import Sidebar from "./components/Sidebar";
 import LibraryPage from "./pages/LibraryPage";
+import LoginPage from "./pages/LoginPage";
 import PlaylistPage from "./pages/PlaylistPage";
 import SearchPage from "./pages/SearchPage";
 
 export default function App() {
+  const [user, setUser] = useState(undefined); // undefined while checking, null when logged out
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then(setUser)
+      .catch((err) => setError(`Could not reach the server: ${err.message}. Is the Django server running?`));
+  }, []);
+
+  async function handleLogOut() {
+    try {
+      await logOut();
+    } catch {
+      // The reload below shows the login page anyway once the session is gone.
+    }
+    // Reloading stops playback and forgets this user's songs, playlists and queue.
+    window.location.reload();
+  }
+
+  if (error) return <p className="error app-message">{error}</p>;
+  if (user === undefined) return <p className="muted app-message">Loading…</p>;
+  if (user === null) return <LoginPage onLoggedIn={setUser} />;
+  return <MusicApp user={user} onLogOut={handleLogOut} />;
+}
+
+// The player itself, shown once someone is logged in.
+function MusicApp({ user, onLogOut }) {
   // Simple in-memory navigation: { name: "library" }, { name: "playlist", id } or { name: "search", query }.
   const [page, setPage] = useState({ name: "library" });
   const [songs, setSongs] = useState(null); // null while loading
@@ -80,6 +108,8 @@ export default function App() {
         onCreatePlaylist={handleCreatePlaylist}
         youtubeImport={youtubeImport}
         youtubeUnseen={youtubeUnseen}
+        user={user}
+        onLogOut={onLogOut}
       />
       <main className="content">
         {page.name === "library" && (
@@ -87,6 +117,7 @@ export default function App() {
             songs={songs}
             setSongs={setSongs}
             loadError={loadError}
+            isAdmin={user.is_admin}
             playlists={playlists}
             onPlaylistsChanged={refreshPlaylists}
             youtubeImport={youtubeImport}

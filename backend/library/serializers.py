@@ -18,7 +18,7 @@ class SongSerializer(serializers.ModelSerializer):
     def get_cover_url(self, song):
         if not song.cover:
             return None
-        return self.context["request"].build_absolute_uri(song.cover.url)
+        return self.context["request"].build_absolute_uri(reverse("song-cover", args=[song.pk]))
 
     def get_stream_url(self, song):
         return self.context["request"].build_absolute_uri(reverse("song-stream", args=[song.pk]))

@@ -1,0 +1,105 @@
+MUSIC PLAYER - COMMANDS
+=======================
+All commands are for Git Bash (the VS Code terminal).
+Each server needs its own terminal. Open more with the "+" in the VS Code terminal panel.
+Stop anything with Ctrl+C.
+Paths assume the project is at D:\Code\Spotify2 (in Git Bash: /d/Code/Spotify2).
+
+
+-----------------------------------------------------------------
+OPTION A: DEVELOPMENT (while changing code, live reload)
+-----------------------------------------------------------------
+First set DEBUG=True in backend/.env
+
+Terminal 1 - backend (http://localhost:8000):
+    cd /d/Code/Spotify2/backend
+    source .venv/Scripts/activate
+    python manage.py runserver 8000
+
+Terminal 2 - frontend:
+    cd /d/Code/Spotify2/frontend
+    npm run dev
+
+Open http://localhost:5173  (use "localhost", NOT 127.0.0.1, or login won't stick)
+
+
+-----------------------------------------------------------------
+OPTION B: REAL USE + ONLINE (Cloudflare tunnel)
+-----------------------------------------------------------------
+First set DEBUG=False in backend/.env
+Here Django serves the frontend too, so there's no "npm run dev".
+
+Step 1 - build the frontend (again after every frontend change):
+    cd /d/Code/Spotify2/frontend
+    npm run build
+
+Terminal 1 - server (http://localhost:8000):
+    cd /d/Code/Spotify2/backend
+    source .venv/Scripts/activate
+    python manage.py collectstatic --noinput    # once, and after upgrading Django
+    python serve.py
+  It prints "Music player running at http://localhost:8000" then stays quiet. That's normal.
+  Restart it (Ctrl+C, then python serve.py) after every npm run build.
+
+Terminal 2 - Cloudflare tunnel:
+    cloudflared tunnel --url http://127.0.0.1:8000
+  If "cloudflared: command not found", restart VS Code, or use the full path:
+    "/c/Program Files (x86)/cloudflared/cloudflared.exe" tunnel --url http://127.0.0.1:8000
+
+  Look for a line like  https://some-random-words.trycloudflare.com
+  That's the public link. It changes every time you start the tunnel,
+  so send people the new link each time. Ctrl+C takes the app offline.
+
+  At home you can still use http://localhost:8000 directly (do big uploads and
+  YouTube downloads there; Cloudflare limits uploads to 100 MB / ~100 seconds).
+
+
+-----------------------------------------------------------------
+ACCOUNTS
+-----------------------------------------------------------------
+Add a user: open <your link>/admin/ (or http://localhost:8000/admin/)
+            -> Users -> Add user. Leave "Staff" and "Superuser" unticked.
+
+Create the admin account (only needed once):
+    cd /d/Code/Spotify2/backend
+    source .venv/Scripts/activate
+    winpty python manage.py createsuperuser
+
+
+-----------------------------------------------------------------
+FIRST-TIME SETUP (only on a fresh machine / fresh clone)
+-----------------------------------------------------------------
+Backend:
+    cd /d/Code/Spotify2/backend
+    python -m venv .venv
+    source .venv/Scripts/activate
+    pip install -r requirements.txt
+    cp .env.example .env
+    python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+        -> paste the printed key into backend/.env as SECRET_KEY=...
+    winpty python manage.py createsuperuser
+    python manage.py migrate
+
+Frontend:
+    cd /d/Code/Spotify2/frontend
+    npm install
+
+Cloudflare (once):
+    winget install --id Cloudflare.cloudflared
+    then restart VS Code
+
+
+-----------------------------------------------------------------
+MAINTENANCE
+-----------------------------------------------------------------
+After changing models (backend/library/models.py):
+    cd /d/Code/Spotify2/backend
+    source .venv/Scripts/activate
+    python manage.py makemigrations library
+    python manage.py migrate
+
+When YouTube downloads start failing:
+    cd /d/Code/Spotify2/backend
+    source .venv/Scripts/activate
+    pip install -U "yt-dlp[default]"
+    pip freeze > requirements.txt

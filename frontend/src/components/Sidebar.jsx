@@ -1,9 +1,18 @@
 import { useCallback, useState } from "react";
-import { getPlaylist } from "../api";
+import { ADMIN_URL, getPlaylist } from "../api";
 import { usePlayer } from "../player/PlayerContext";
 import ContextMenu from "./ContextMenu";
 
-export default function Sidebar({ playlists, page, onNavigate, onCreatePlaylist, youtubeImport, youtubeUnseen }) {
+export default function Sidebar({
+  playlists,
+  page,
+  onNavigate,
+  onCreatePlaylist,
+  youtubeImport,
+  youtubeUnseen,
+  user,
+  onLogOut,
+}) {
   const { addSongsToQueue } = usePlayer();
   const [menu, setMenu] = useState(null); // { x, y, playlist } while the right-click menu is open
   const closeMenu = useCallback(() => setMenu(null), []);
@@ -59,6 +68,22 @@ export default function Sidebar({ playlists, page, onNavigate, onCreatePlaylist,
           <span className="muted small">{playlist.song_count}</span>
         </button>
       ))}
+
+      <div className="account">
+        <span className="muted small">
+          Logged in as <strong>{user.username}</strong>
+        </span>
+        <div className="account-actions">
+          {user.is_admin && (
+            <a className="link" href={ADMIN_URL} target="_blank" rel="noreferrer">
+              Manage users
+            </a>
+          )}
+          <button className="link" onClick={onLogOut}>
+            Log out
+          </button>
+        </div>
+      </div>
 
       {menu && (
         <ContextMenu

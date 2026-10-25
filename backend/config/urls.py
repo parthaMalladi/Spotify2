@@ -1,12 +1,9 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+# Audio and cover art are served by views in library/streaming.py, which require a login,
+# so song_files/ is never served directly. The built frontend is served by WhiteNoise (see settings).
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("library.urls")),
 ]
-
-# Serves cover art from song_files/ (dev server only, which is all this app uses).
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

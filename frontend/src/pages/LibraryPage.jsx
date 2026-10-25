@@ -10,6 +10,7 @@ export default function LibraryPage({
   songs,
   setSongs,
   loadError,
+  isAdmin,
   playlists,
   onPlaylistsChanged,
   youtubeImport,
@@ -40,21 +41,30 @@ export default function LibraryPage({
   return (
     <>
       <h2>Library</h2>
-      <UploadForm onUploaded={handleUploaded} />
-      <YouTubeImportForm status={youtubeImport} onImport={onYouTubeImport} />
+      {/* Only the admin adds and deletes songs; everyone else browses and plays. */}
+      {isAdmin && (
+        <>
+          <UploadForm onUploaded={handleUploaded} />
+          <YouTubeImportForm status={youtubeImport} onImport={onYouTubeImport} />
+        </>
+      )}
       {loadError && <p className="error">{loadError}</p>}
       {message && <p className={message.error ? "error" : "success"}>{message.text}</p>}
       <SongList
         songs={songs ?? []}
         contextName="Library"
-        emptyMessage={songs === null ? "Loading…" : "No songs yet. Upload some to get started."}
+        emptyMessage={
+          songs === null ? "Loading…" : isAdmin ? "No songs yet. Upload some to get started." : "No songs yet."
+        }
         actions={(song) => (
           <>
             <AddToQueueButton song={song} />
             <AddToPlaylistSelect song={song} playlists={playlists} onResult={handleAddedToPlaylist} />
-            <button className="link danger" onClick={() => handleDelete(song)}>
-              Delete
-            </button>
+            {isAdmin && (
+              <button className="link danger" onClick={() => handleDelete(song)}>
+                Delete
+              </button>
+            )}
           </>
         )}
       />
