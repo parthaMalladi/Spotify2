@@ -1,14 +1,24 @@
 import { usePlayer } from "../player/PlayerContext";
+import Cover from "./Cover";
 
-// The always-visible queue on the right: Now playing, then the manual queue, then the rest of the playlist/library.
-export default function QueuePanel() {
+// The queue: Now playing, then the manual queue, then the rest of the playlist/library.
+// variant "panel": always visible on the right (wide screens). "drawer": slides in from the right on
+// narrower screens, with a close button (onClose). "page": the Queue tab on phones.
+export default function QueuePanel({ variant = "panel", onClose }) {
   const player = usePlayer();
   const { currentSong, manualQueue, upNext, contextName, isShuffled } = player;
   const nothingQueued = manualQueue.length === 0 && upNext.length === 0;
 
   return (
-    <aside className="queue-panel">
-      <h2>Queue</h2>
+    <aside className={`queue-panel ${variant}`}>
+      <div className="queue-panel-heading">
+        <h2>Queue</h2>
+        {onClose && (
+          <button className="link" onClick={onClose} aria-label="Close queue">
+            ✕
+          </button>
+        )}
+      </div>
 
       {currentSong && (
         <section>
@@ -74,7 +84,7 @@ function QueueItem({ song, current, onPlay, children }) {
   return (
     <div className={`queue-item ${current ? "current" : ""}`}>
       <button className="queue-item-main" onClick={onPlay} disabled={!onPlay} title={onPlay ? "Play" : undefined}>
-        {song.cover_url ? <img className="cover" src={song.cover_url} alt="" /> : <div className="cover placeholder">♪</div>}
+        <Cover song={song} />
         <span className="queue-item-text">
           <span className="title">{song.title}</span>
           <span className="muted small">{song.artist || "Unknown artist"}</span>

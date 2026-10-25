@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { ADMIN_URL, getPlaylist } from "../api";
 import { usePlayer } from "../player/PlayerContext";
+import { queuePlaylist } from "../player/queuePlaylist";
+import AccountInfo from "./AccountInfo";
 import ContextMenu from "./ContextMenu";
 
 export default function Sidebar({
@@ -20,16 +21,6 @@ export default function Sidebar({
   function handleContextMenu(event, playlist) {
     event.preventDefault();
     setMenu({ x: event.clientX, y: event.clientY, playlist });
-  }
-
-  async function addPlaylistToQueue(playlist) {
-    try {
-      // The sidebar list only has counts, so fetch the songs in playlist order.
-      const detail = await getPlaylist(playlist.id);
-      addSongsToQueue(detail.songs);
-    } catch (err) {
-      window.alert(`Could not add "${playlist.name}" to the queue: ${err.message}`);
-    }
   }
 
   return (
@@ -69,21 +60,7 @@ export default function Sidebar({
         </button>
       ))}
 
-      <div className="account">
-        <span className="muted small">
-          Logged in as <strong>{user.username}</strong>
-        </span>
-        <div className="account-actions">
-          {user.is_admin && (
-            <a className="link" href={ADMIN_URL} target="_blank" rel="noreferrer">
-              Manage users
-            </a>
-          )}
-          <button className="link" onClick={onLogOut}>
-            Log out
-          </button>
-        </div>
-      </div>
+      <AccountInfo user={user} onLogOut={onLogOut} />
 
       {menu && (
         <ContextMenu
@@ -94,7 +71,7 @@ export default function Sidebar({
             {
               label: menu.playlist.song_count === 0 ? "Add to queue (playlist is empty)" : "Add playlist to queue",
               disabled: menu.playlist.song_count === 0,
-              onClick: () => addPlaylistToQueue(menu.playlist),
+              onClick: () => queuePlaylist(menu.playlist, addSongsToQueue),
             },
           ]}
         />

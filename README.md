@@ -25,6 +25,9 @@ Everything runs on your own machine. Other people reach it through a free [Cloud
 - **Shuffle** plays every song of the current playlist/library once in random order. Turning it off goes back to the original order without interrupting the current song. The manual queue is never shuffled.
 - **Loop:** off → loop the whole list → loop the current song (shown by a "1" badge).
 - **Player bar:** play/pause, previous/next, seek (drag the progress bar), volume. It keeps playing while you move between pages.
+- **Works on phones and tablets.** Under 768px wide you get a phone layout: tabs along the bottom (Library, Search, Playlists, Queue), a mini player above them, and a full-screen player when you tap it. Between 768 and 1100px the queue becomes a drawer, opened with the Queue button in the player bar.
+- **Back button:** the browser's Back/Forward buttons (and swiping back on a phone) move between pages, and Back closes the full-screen player.
+- **Lock-screen controls:** the song, cover and play/pause/next/previous appear on a phone's lock screen and notifications, and keyboard media keys work on desktops.
 
 ## Using the app
 
@@ -32,6 +35,7 @@ Everything runs on your own machine. Other people reach it through a free [Cloud
 - **Queue a song:** **Add to queue** on any row. **Queue a playlist:** right-click it in the sidebar → **Add playlist to queue**.
 - **Add to a playlist:** the **Add to playlist…** dropdown on Library and search rows. Create playlists with **+ New** in the sidebar.
 - **Previous** restarts the current song if it's more than 3 seconds in; press it again to go back a song.
+- **On a phone:** tap a song to play it, and tap **⋯** on a row for Add to queue, Add to playlist, Move up/down, Remove or Delete. Tap **⋯** on a playlist in the Playlists tab to queue the whole playlist. Your account and **Log out** are at the bottom of the Playlists tab. There's no volume slider on phones; use the phone's volume buttons.
 
 ## First-time setup
 
@@ -154,8 +158,10 @@ backend/
 frontend/src/
   api.js               All calls to the backend
   player/              PlayerProvider: the <audio> element, queue, shuffle and loop
-  pages/               Login, Library, Playlist and Search pages
-  components/          Sidebar, song table, queue panel, player bar, etc.
+  pages/               Login, Library, Playlist, Search and (phones) Playlists pages
+  components/          Sidebar, song list, queue panel, player bar, and the phone tab bar,
+                       mini player, full-screen player and action sheet
+  useMediaQuery.js     The phone/tablet breakpoints
   index.css            All styles (colour palette at the top)
 song_files/            Uploaded audio (audio/) and cover art (covers/). Git-ignored.
 ```

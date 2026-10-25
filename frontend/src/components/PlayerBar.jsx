@@ -1,37 +1,18 @@
-import { useState } from "react";
-import { formatDuration } from "../format";
 import { usePlayer } from "../player/PlayerContext";
-import { LoopIcon, ShuffleIcon } from "./icons";
+import Cover from "./Cover";
+import { QueueIcon } from "./icons";
+import { PlaybackButtons, ProgressBar } from "./PlayerControls";
 
-const LOOP_TITLES = {
-  off: "Loop: off (click to loop the list)",
-  all: "Loop: whole list (click to loop this song)",
-  one: "Loop: this song (click to turn off)",
-};
-
-export default function PlayerBar() {
+// The desktop/tablet player bar. `onToggleQueue` is only passed on narrower screens, where the queue
+// is a drawer instead of an always-visible panel; it adds a Queue button next to the volume.
+export default function PlayerBar({ onToggleQueue, queueOpen }) {
   const player = usePlayer();
-  const { currentSong, isPlaying, currentTime, duration, volume, error } = player;
-  // While the progress bar is being dragged, show the drag position and only seek on release.
-  const [dragTime, setDragTime] = useState(null);
-
-  function commitSeek() {
-    if (dragTime !== null) {
-      player.seek(dragTime);
-      setDragTime(null);
-    }
-  }
-
-  const shownTime = dragTime ?? currentTime;
+  const { currentSong, volume, error } = player;
 
   return (
     <footer className="player-bar">
       <div className="now-playing">
-        {currentSong?.cover_url ? (
-          <img className="cover" src={currentSong.cover_url} alt="" />
-        ) : (
-          <div className="cover placeholder">♪</div>
-        )}
+        <Cover song={currentSong} />
         <div className="now-playing-text">
           <div className="title">{currentSong ? currentSong.title : "Nothing playing"}</div>
           <div className="muted">{currentSong?.artist}</div>
@@ -39,58 +20,23 @@ export default function PlayerBar() {
       </div>
 
       <div className="controls">
-        <div className="buttons">
-          <button
-            className={`icon toggle ${player.isShuffled ? "active" : ""}`}
-            onClick={player.toggleShuffle}
-            title={player.isShuffled ? "Shuffle: on (click to restore original order)" : "Shuffle: off"}
-            aria-pressed={player.isShuffled}
-          >
-            <ShuffleIcon />
-          </button>
-          <button className="icon" onClick={player.previous} disabled={!currentSong} title="Previous">
-            ⏮
-          </button>
-          <button
-            className="icon play"
-            onClick={player.togglePlay}
-            disabled={!currentSong && !player.hasNext}
-            title={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? "⏸" : "▶"}
-          </button>
-          <button className="icon" onClick={player.next} disabled={!player.hasNext} title="Next">
-            ⏭
-          </button>
-          <button
-            className={`icon toggle ${player.loopMode !== "off" ? "active" : ""}`}
-            onClick={player.cycleLoopMode}
-            title={LOOP_TITLES[player.loopMode]}
-            aria-label={LOOP_TITLES[player.loopMode]}
-          >
-            <LoopIcon />
-            {player.loopMode === "one" && <span className="loop-one-badge">1</span>}
-          </button>
-        </div>
-        <div className="progress">
-          <span className="time">{formatDuration(shownTime)}</span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.1}
-            value={Math.min(shownTime, duration || 0)}
-            disabled={!currentSong}
-            onChange={(e) => setDragTime(Number(e.target.value))}
-            onPointerUp={commitSeek}
-            onKeyUp={commitSeek}
-          />
-          <span className="time">{formatDuration(duration)}</span>
-        </div>
+        <PlaybackButtons />
+        <ProgressBar />
         {error && <div className="player-error">{error}</div>}
       </div>
 
       <div className="volume">
+        {onToggleQueue && (
+          <button
+            className={`icon toggle ${queueOpen ? "active" : ""}`}
+            onClick={onToggleQueue}
+            title="Queue"
+            aria-label="Queue"
+            aria-pressed={queueOpen}
+          >
+            <QueueIcon />
+          </button>
+        )}
         <span title="Volume">🔊</span>
         <input
           type="range"
@@ -98,6 +44,7 @@ export default function PlayerBar() {
           max={1}
           step={0.01}
           value={volume}
+          aria-label="Volume"
           onChange={(e) => player.setVolume(Number(e.target.value))}
         />
       </div>

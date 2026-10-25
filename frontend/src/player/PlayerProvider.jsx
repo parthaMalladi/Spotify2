@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlayerContext } from "./PlayerContext";
 
 // Entries wrap a song with a unique key, so the same song can appear more than once.
@@ -194,6 +194,55 @@ export default function PlayerProvider({ children }) {
     }
     setIsPlaying(false);
   }
+
+  // Lock-screen and notification controls on phones (and media keys on desktops), via the Media Session API.
+  const hasMediaSession = "mediaSession" in navigator;
+
+  useEffect(() => {
+    if (!hasMediaSession) return;
+    navigator.mediaSession.metadata = currentSong
+      ? new MediaMetadata({
+          title: currentSong.title,
+          artist: currentSong.artist,
+          album: currentSong.album,
+          artwork: currentSong.cover_url ? [{ src: currentSong.cover_url }] : [],
+        })
+      : null;
+  }, [hasMediaSession, currentSong]);
+
+  useEffect(() => {
+    if (hasMediaSession) navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+  }, [hasMediaSession, isPlaying]);
+
+  // Lets the lock screen show (and seek) the song position.
+  useEffect(() => {
+    if (!hasMediaSession || !navigator.mediaSession.setPositionState || !currentSong || !(duration > 0)) return;
+    try {
+      navigator.mediaSession.setPositionState({ duration, position: Math.min(currentTime, duration), playbackRate: 1 });
+    } catch {
+      // Some browsers reject odd values mid-load; the next timeupdate tries again.
+    }
+  }, [hasMediaSession, currentSong, currentTime, duration]);
+
+  // Re-registered after every render, because next/previous depend on the current queue.
+  // A null handler greys the button out (e.g. Next when nothing is up next).
+  useEffect(() => {
+    if (!hasMediaSession) return;
+    const handlers = {
+      play: () => (current ? audioRef.current.play().catch(() => {}) : next()),
+      pause: () => audioRef.current.pause(),
+      previoustrack: current ? previous : null,
+      nexttrack: hasNext ? next : null,
+      seekto: current ? (details) => seek(details.seekTime) : null,
+    };
+    for (const [action, handler] of Object.entries(handlers)) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch {
+        // This browser doesn't support that action.
+      }
+    }
+  });
 
   const value = {
     currentSong,

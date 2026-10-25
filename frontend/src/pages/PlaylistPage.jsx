@@ -3,10 +3,12 @@ import { deletePlaylist, getPlaylist, removeSongFromPlaylist, reorderPlaylist, u
 import AddToQueueButton from "../components/AddToQueueButton";
 import SongList from "../components/SongList";
 import { usePlayer } from "../player/PlayerContext";
+import { useIsMobile } from "../useMediaQuery";
 
 // Rendered with key={id}, so it remounts (and refetches) when switching playlists.
 export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
   const { playSongs, addSongsToQueue } = usePlayer();
+  const isMobile = useIsMobile(); // phones show the row actions in a sheet, which needs spelled-out labels
   const [playlist, setPlaylist] = useState(null);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -103,7 +105,7 @@ export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
           <>
             <AddToQueueButton song={song} />
             <button className="link" onClick={() => handleMove(i, -1)} disabled={i === 0} title="Move up">
-              ↑
+              {isMobile ? "Move up" : "↑"}
             </button>
             <button
               className="link"
@@ -111,10 +113,10 @@ export default function PlaylistPage({ id, onPlaylistsChanged, onDeleted }) {
               disabled={i === playlist.songs.length - 1}
               title="Move down"
             >
-              ↓
+              {isMobile ? "Move down" : "↓"}
             </button>
             <button className="link danger" onClick={() => handleRemove(song)}>
-              Remove
+              {isMobile ? "Remove from playlist" : "Remove"}
             </button>
           </>
         )}
